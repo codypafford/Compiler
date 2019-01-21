@@ -4,6 +4,7 @@ public class Tokens {
     private String contents;
     private Boolean isValid = true;
     private int depth = 0;
+    private int commentDepth = 0;
 
 
     public Tokens(String token){
@@ -39,7 +40,7 @@ public class Tokens {
 
     @Override
     public String toString() {
-        return (String.format("Type =%s Contents =%s isValid =%s depth =%s", type, contents, isValid, depth));
+        return (String.format("Type =%s Contents =%s isValid =%s depth =%s CommentDepth = %s", type, contents, isValid, depth, commentDepth));
     }
 
     public String getType() {
@@ -56,6 +57,14 @@ public class Tokens {
 
     public void setDepth(int depth) {
         this.depth = depth;
+    }
+
+    public int getCommentDepth() {
+        return commentDepth;
+    }
+
+    public void setCommentDepth(int commentDepth) {
+        this.commentDepth = commentDepth;
     }
 
     public Boolean getValid() {

@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 
 public class Main {
     static int depthCounter = 0;
+    static int commentDepth = 0;
     static ArrayList<String> opTable = new ArrayList<>();
     static ArrayList<Tokens> list = new ArrayList<>();
     static ArrayList<String> keywords = new ArrayList<>();
@@ -17,12 +18,15 @@ public class Main {
         createKeywordTable();
         createOpTable();
         readFile(args);
-        String x = "123.45f";
-        if(x.matches("[+-]?([0-9]*[.])?[0-9]+")){
-
-        }
+        String x = "#123.45f";
+        System.out.println(containsFloat(x));
     }
 
+    private static Boolean containsFloat(String s){
+        Pattern regex = Pattern.compile(".*[+-]?([0-9]*[.])[0-9]+.*");
+        Matcher matcher = regex.matcher(s);
+        return matcher.matches();
+    }
 
     private static void createKeywordTable(){
         keywords.add("else");
@@ -34,8 +38,15 @@ public class Main {
     }
 //  this will split strings by letters and numbers
     private static void check(String str) {
-//       if (str.matches(float))
-       //         str = non-float portion of string
+        if (containsFloat(str)){
+            ///HOW DO I KEEP THE SECOND PART OF MY SPLIT!!!!!!!!!!!!!!!!!!!!!!
+         //   String [] p = str.split("([-+]?\\d+(?:(?:\\.\\d+)?[eE][-+]?\\d+|\\.\\d+))(.*)$");
+          //  System.out.println(p[0]);
+          //  str = p[0];
+          //  System.out.println(p[1]);
+           // Tokens token = new Tokens(p[1]);
+           // list.add(token);
+        }
         String[] part = str.split("\\b");
           //check if valid before breaking apart
            if(part.length==0){
@@ -43,7 +54,9 @@ public class Main {
                determineDepthUp(token);
                token.setDepth(depthCounter);
                isLetterandNumberCombo(token);
-               list.add(token);
+               if(token.getCommentDepth() == 0){
+                   list.add(token);
+               }
                determineDepthDown(token);
 
            }else{
@@ -55,8 +68,11 @@ public class Main {
                        Tokens token = new Tokens(part[i]);
                        determineDepthUp(token);
                        token.setDepth(depthCounter);
+                       token.setCommentDepth(commentDepth);
                        isLetterandNumberCombo(token);
-                       list.add(token);
+                       if(token.getCommentDepth() == 0){
+                           list.add(token);
+                       }
                        determineDepthDown(token);
 
 
@@ -76,14 +92,20 @@ public class Main {
         if (token.getContents().contains("{")){
             depthCounter++;
         }
+        if(token.getContents().contains("/*")){
+            commentDepth++;
+        }
     }
 
     private static void determineDepthDown(Tokens token) {
         if (token.getContents().contains("}")){
             depthCounter--;
         }
+        if(token.getContents().contains("*/")){
+            commentDepth--;
+        }
     }
-
+//ALL SPECIAL CHARACTERS AND PUNCTUATION COME HERE
     private static void splitOperators(String string){
         if (string.length() > 1) {
             while (string.length() > 0) {
@@ -92,8 +114,11 @@ public class Main {
                         Tokens token = new Tokens(opTable.get(i));
                         determineDepthUp(token);
                         token.setDepth(depthCounter);
+                        token.setCommentDepth(commentDepth);
                         isLetterandNumberCombo(token);
-                        list.add(token);
+                        if(token.getCommentDepth() == 0){
+                            list.add(token);
+                        }
                         determineDepthDown(token);
 
                         if (opTable.get(i).length() == 1) {
@@ -107,8 +132,11 @@ public class Main {
                         token.setValid(false);
                         determineDepthUp(token);
                         token.setDepth(depthCounter);
+                        token.setCommentDepth(commentDepth);
                         isLetterandNumberCombo(token);
-                        list.add(token);
+                        if(token.getCommentDepth() == 0){
+                            list.add(token);
+                        }
                         determineDepthDown(token);
 
                         if (string.length() > 1){
@@ -122,9 +150,12 @@ public class Main {
             Tokens token = new Tokens(string);
             determineDepthUp(token);
             token.setDepth(depthCounter);
+            token.setCommentDepth(commentDepth);
             checkValidity(token);
             isLetterandNumberCombo(token);
-            list.add(token);
+            if(token.getCommentDepth() == 0){
+                list.add(token);
+            }
             determineDepthDown(token);
 
         }
@@ -149,6 +180,9 @@ public class Main {
         opTable.add(">=");
         opTable.add("==");
         opTable.add("!=");
+        opTable.add("/*");
+        opTable.add("*/");
+        opTable.add("//");
         opTable.add(">");
         opTable.add("<");
         opTable.add(",");
@@ -164,9 +198,7 @@ public class Main {
         opTable.add("]");
         opTable.add("{");
         opTable.add("}");
-        opTable.add("/*");
-        opTable.add("*/");
-        opTable.add("//");
+
     }
 
     private static void readFile(String[] args) throws IOException {
@@ -187,8 +219,8 @@ public class Main {
             String result=file.replaceAll( "//.*|(\"(?:\\\\[^\"]|\\\\\"|.)*?\")|(?s)/\\*.*?\\*/", "$1 ");
             System.out.println(result);
             System.out.println("*************************************************************************");
-
-            s = new Scanner(result);
+            System.out.println(file);
+            s = new Scanner(file);
             while (s.hasNextLine()) {
                 line = s.nextLine();
                 if(!line.isEmpty()) {
