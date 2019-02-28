@@ -3,6 +3,7 @@ public class Parser {
 
     private int n = 0;
     private Tokens token = Main.TokenList.get(n);
+    Boolean endOfFile = false;
 
     public Parser() {
             Boolean bool = parse_Program();
@@ -28,18 +29,21 @@ public class Parser {
         }
         if(!parse_DeclarationListPrime()){
               return false;
-        }
-        return true;
+        }else return true;
     }
 
     private boolean parse_DeclarationListPrime() {
             if (token.getContents().equals("int") || token.getContents().equals("void") || token.getContents().equals("float")) {
                 if (!parse_Declaration()) {
                     return false;
-                }else return true;
-            }
-
-        return true;
+                }
+                if (!parse_DeclarationListPrime()){
+                    return false;
+                }
+                return true;
+            }else if (endOfFile){
+                return true;
+            }else return false;
     }
 
 
@@ -89,22 +93,20 @@ public class Parser {
             if (token.getContents().equals("}")){
                 Accept();
                 return true;
-            }
-        }
-        return false;               //ORIGINALLY SAID RETURN TRUE? PROB FOR TESTING PURPOSES THOUGH
+            }else return false;
+        }else return false;
     }
 
     private boolean parse_statementList() {
         if (!parse_statementListPrime()){
             return false;
-        }
-        return true;
+        } else return true;
     }
 
     private boolean parse_statementListPrime() {
-        if (token.getContents().equals(";") || isID(token) || isNUM(token)
+        if ((token.getContents().equals(";") || isID(token) || isNUM(token)
                 || token.getContents().equals("(") || token.getContents().equals("{") || token.getContents().equals("if")
-                || token.getContents().equals("while") || token.getContents().equals("return")){
+                || token.getContents().equals("while") || token.getContents().equals("return")) && !endOfFile){
             if (!parse_statement()){
                 return false;
             }
@@ -131,7 +133,7 @@ public class Parser {
 
     private boolean isNUM(Tokens token){
         try{
-            if (token.getType().equals("NUM")){
+            if (token.getType().equals("NUM") || token.getType().equals("FLOAT")){
                 return true;
             }
         } catch (Exception e) {
@@ -754,18 +756,6 @@ public class Parser {
         return false;
     }
 
-    private boolean isKEYWORD(Tokens token) {
-        try{
-            if (token.getType().equals("KEYWORD")){
-                return true;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return false;
-    }
-
-
     private boolean parse_returnStmt() {
         if (token.getContents().equals("return")){
             Accept();
@@ -788,10 +778,9 @@ public class Parser {
             }
             if (token.getContents().equals(";")){
                 Accept();
-                return true;
             }
-        }
-        return false;
+            return true;
+        }else return false;
     }
 
 
@@ -933,8 +922,15 @@ public class Parser {
                 token = Main.TokenList.get(++n);
             }
         }catch (Exception e){
-//
+            //
         }
+        if ((n) >= Main.TokenList.size()-1){
+            endOfFile(true);
+        }
+    }
+
+    private void endOfFile(boolean b) {
+        endOfFile = b;
     }
 
     private boolean parse_TypeSpecifier() {
