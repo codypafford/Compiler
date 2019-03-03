@@ -1,2 +1,55 @@
-int g 5 cd (int u, int v) 
+
+
+int MEGACONSTANT;
+float HYPERCONSTANT;
+float PI;
+
+
+int MEGAFUNCTION ( void )
 {
+    while(x+3 + (3 - 3) + 3 + 3){
+
+}
+    return 4; }
+
+int MEGAFUNCTIONTWO(int x,int y){if (x < 0) return x + y; else return x - y;}
+float a(float b) {
+    int c;
+    int x[10];
+    if (b < 0){ return 0.0;}
+    while (c * (4 + b + MEGACONSTANT * 5)){
+        float x;
+        x = 3.3333;
+        if(x == y){
+        int x;
+        float tt;
+        x = x - 3 + (4 / 3.0);
+        }
+    }
+
+    x[0] = x[4.4] + x[5.05-22];
+
+
+}
+
+// don't parse this
+
+/*
+
+this /*
+
+either */
+
+*/
+
+int gcd( int u, int v) {
+if (v == 0) return u;
+else return gcd(v,u-u/v*v);
+
+}
+
+
+
+int x[10];
+
+
