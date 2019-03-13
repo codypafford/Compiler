@@ -5,7 +5,11 @@ public class Tokens {
     private Boolean isValid = true;
     private int depth = 0;
     private int commentDepth = 0;
-
+    private Boolean isComment;
+    private Boolean isArray = false;
+    private String declaredType;
+    private int arraySize;
+    private Boolean isMethodCall;
 
     public Tokens(String token){
         contents = token;
@@ -40,7 +44,8 @@ public class Tokens {
 
     @Override
     public String toString() {
-        return (String.format("Type =%s Contents =%s isValid =%s depth =%s CommentDepth = %s", type, contents, isValid, depth, commentDepth));
+        return (String.format("Contents= %5s isArray= %5s declaredType= %5s ArraySize= %5s ",Function.ANSI_PURPLE+ contents + Function.ANSI_RESET, Function.ANSI_GREEN + isArray+
+                Function.ANSI_RESET, Function.ANSI_RED+ declaredType+ Function.ANSI_RESET, Function.ANSI_CYAN + arraySize + Function.ANSI_RESET));
     }
 
     public String getType() {
@@ -55,6 +60,21 @@ public class Tokens {
         return contents;
     }
 
+    public Boolean getIsComment() {
+        return isComment;
+    }
+
+    public void setIsComment(Tokens token) {
+       if (token.commentDepth != 0){
+           isComment = true;
+       }
+
+    }
+
+    public void setContents(String contents) {
+        this.contents = contents;
+    }
+
     public void setDepth(int depth) {
         this.depth = depth;
     }
@@ -67,7 +87,39 @@ public class Tokens {
         this.commentDepth = commentDepth;
     }
 
+    public int getDepth() {
+        return depth;
+    }
+
+    public Boolean getArray() {
+        return isArray;
+    }
+
+    public void setArray(Boolean array) {
+        isArray = array;
+    }
+
+    public String getDeclaredType() {
+        return declaredType;
+    }
+
+    public void setDeclaredType(String declaredType) {
+        this.declaredType = declaredType;
+    }
+
+    public Boolean getMethodCall() {
+        return isMethodCall;
+    }
+
+    public void setMethodCall(Boolean methodCall) {
+        isMethodCall = methodCall;
+    }
+
     public Boolean getValid() {
         return isValid;
+    }
+
+    public void setArraySize(int arraySize) {
+        this.arraySize = arraySize;
     }
 }
