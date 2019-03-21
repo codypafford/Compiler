@@ -246,7 +246,7 @@ public class Main {
         return matcher.matches();
     }
 
-    private static Boolean containsFloat(String s) {
+    public static Boolean containsFloat(String s) {
         Pattern regex = Pattern.compile(".*\\d+(\\.\\d+)?(E(\\+|-)?\\d+)?.*");
         Matcher matcher = regex.matcher(s);
         return matcher.matches();

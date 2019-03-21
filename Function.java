@@ -6,19 +6,21 @@ public class Function {
     private String name;
     private String TYPE;
     private ArrayList<Tokens> variablesInParams = new ArrayList<>();
-    private ArrayList<Tokens> variablesInFunction = new ArrayList<>();   //NEED THIS NEXT
+    private ArrayList<Tokens> variablesInFunction = new ArrayList<>();
     private int numOfVariablesInFunction = 0;
-    public static final String ANSI_RESET = "\u001B[0m";
+    static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_BLACK = "\u001B[30m";
-    public static final String ANSI_RED = "\u001B[31m";
-    public static final String ANSI_GREEN = "\u001B[32m";
+    static final String ANSI_RED = "\u001B[31m";
+    static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_YELLOW = "\u001B[33m";
-    public static final String ANSI_BLUE = "\u001B[34m";
-    public static final String ANSI_PURPLE = "\u001B[35m";
-    public static final String ANSI_CYAN = "\u001B[36m";
-    public static final String ANSI_WHITE = "\u001B[37m";
+    private static final String ANSI_BLUE = "\u001B[34m";
+    static final String ANSI_PURPLE = "\u001B[35m";
+    static final String ANSI_CYAN = "\u001B[36m";
+    private static final String ANSI_WHITE = "\u001B[37m";
     private int numOfVariablesInParams = 0;
-    public Function(String name) {
+    private Boolean hasReturnStmt = false;
+
+    Function(String name) {
         this.name=name;
     }
 
@@ -84,13 +86,16 @@ public class Function {
             Tokens t = variablesInFunction.get(i);
             if (t.getContents().equals(nameOfDeclaration)){
                 System.out.println("ERROR: This variable: " +  nameOfDeclaration + " has already been declared in the function: " + name + " with depth: " + t.getDepth());
+                System.out.println("REJECT");
+                System.exit(0);
             }
         }
         for (int i = 0; i < SemanticAnalyzer.tempVarList.size(); i++){
             Tokens t = SemanticAnalyzer.tempVarList.get(i);
             if (t.getContents().equals(nameOfDeclaration)){
                 System.out.println("ERROR: This variable: " +  nameOfDeclaration + " has already been declared in this scope: " + name + " with depth: " + t.getDepth());
-
+                System.out.println("REJECT");
+                System.exit(0);
             }
         }
 
@@ -119,4 +124,59 @@ public class Function {
         }
         return false;
     }
+
+    public Boolean getHasReturnStmt() {
+        return hasReturnStmt;
+    }
+
+    public void setHasReturnStmt(Boolean hasReturnStmt) {
+        this.hasReturnStmt = hasReturnStmt;
+    }
+
+    public Boolean isThisAnArray(Tokens token){
+        String nameOfDeclaration = token.getContents();
+        for (int i = 0; i < variablesInFunction.size(); i++) {
+            Tokens t = variablesInFunction.get(i);
+            if (t.getContents().equals(nameOfDeclaration)){
+                if (t.getArray()){
+                    return true;
+                }else return false;
+            }
+        }
+
+        return false;
+    }
+
+    public Tokens getDeclaredDataOfToken(Tokens token){
+        String nameOfDeclaration = token.getContents();
+        for (int i = 0; i < variablesInFunction.size(); i++) {
+            Tokens t = variablesInFunction.get(i);
+            if (t.getContents().equals(nameOfDeclaration)){
+                return t;
+            }
+        }
+        for (int i = 0; i < SemanticAnalyzer.tempVarList.size(); i++){
+            Tokens t = SemanticAnalyzer.tempVarList.get(i);
+            if (t.getContents().equals(nameOfDeclaration)){
+                return t;
+            }
+        }
+        for (int i = 0; i < SemanticAnalyzer.globalVariables.size(); i++){
+            Tokens t = SemanticAnalyzer.globalVariables.get(i);
+            if (t.getContents().equals(nameOfDeclaration)){
+                return t;
+            }
+        }
+        try{
+            int num = Integer.parseInt(token.getContents());
+            token.setDeclaredType("int");
+        }catch (Exception e){
+            if (Main.containsFloat(token.getContents())){
+                token.setDeclaredType("float");
+            }
+        }
+
+        return null;
+    }
+
 }

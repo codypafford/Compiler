@@ -12,24 +12,30 @@ public class MethodCall {
         }
 
     }
-
-    public int getNumOfParams() {
+    void setToNull(MethodCall methodCall){
+        methodCall.setMethodName("null");
+    }
+    int getNumOfParams() {
         return numOfParams;
     }
 
-    public void setNumOfParams(int numOfParams) {
+    void setNumOfParams(int numOfParams) {
         this.numOfParams = numOfParams;
     }
 
-    public ArrayList<String> getParamArray() {
+    ArrayList<String> getParamArray() {
         return paramArray;
     }
 
-    public String getMethodName() {
+    String getMethodName() {
         return methodName;
     }
 
     public void setParamArray(String param) {
         this.paramArray.add(param);
+    }
+
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
     }
 }

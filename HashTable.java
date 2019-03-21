@@ -1,7 +1,7 @@
 import java.util.*;
 
 
-public class HashTable {
+class HashTable {
 
 
     private Function[] hashArray;
@@ -65,7 +65,6 @@ public class HashTable {
     }
 
     Boolean SearchLinearProbe(Function funct) {    //The Search
-        // pair = The Pair made from each new Line
         int hashValue = SemanticAnalyzer.findhashVal(funct.getName());
         while (hashArray[hashValue] != null) {
             Function p = new Function(hashArray[hashValue]);
@@ -77,7 +76,7 @@ public class HashTable {
             hashValue = (hashValue + 1) % 501;
 
         }
-        System.out.println("NOT FOUND");
+      //  System.out.println("NOT FOUND");
         return false;
     }
 
@@ -94,8 +93,25 @@ public class HashTable {
             hashValue = (hashValue + 1) % 501;
 
         }
-        System.out.println("NOT FOUND");
+     //   System.out.println("NOT FOUND");
         return null;
+    }
+
+    Boolean isThisAnArray(String name) {    //The Search
+        // pair = The Pair made from each new Line
+        int hashValue = SemanticAnalyzer.findhashVal(name);
+        while (hashArray[hashValue] != null) {
+            Function p = new Function(hashArray[hashValue]);
+
+            if (p.getName().equals(name)) {
+                // System.out.println("found it");
+                return true;
+            }
+            hashValue = (hashValue + 1) % 501;
+
+        }
+      //  System.out.println("NOT FOUND");
+        return false;
     }
 
 

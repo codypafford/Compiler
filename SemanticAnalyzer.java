@@ -1,27 +1,27 @@
 
+import com.sun.xml.internal.bind.v2.model.core.ID;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
 
-public class SemanticAnalyzer {
+class SemanticAnalyzer {
 
     private int n = 0;
     private Tokens token = Main.tokensForSemantics.get(n);
-    Boolean endOfFile = false;
-    static String Type = "";
+    private Boolean endOfFile = false;
     static HashTable functionList = new HashTable(501);
     private static ArrayList<Tokens> variableList = new ArrayList<>();
-    public static ArrayList<Tokens> globalVariables = new ArrayList<>();
-    public static ArrayList<Tokens> tempVarList = new ArrayList<>();
-    Stack stack = new Stack<Function>();
-    static String functionName = "";
+    static ArrayList<Tokens> globalVariables = new ArrayList<>();
+    static ArrayList<Tokens> tempVarList = new ArrayList<>();
+    private Stack stack = new Stack<Function>();
     private Function function;
-    private Tokens IDholder;
     private int numOfParamsinCall = 1;
     private MethodCall methodCall;
+    private Tokens typeHolder;
 
 
-    public SemanticAnalyzer() {
+    SemanticAnalyzer() {
         Boolean bool = parse_Program();
         if (bool) {
             System.out.println("ACCEPT");
@@ -38,7 +38,7 @@ public class SemanticAnalyzer {
         System.out.println("----------------------------------------------------------------------------------");
     }
 
-    Boolean parse_Program() {
+    private Boolean parse_Program() {
         if (!parse_DeclarationList()) {
             return false;
         }
@@ -46,9 +46,9 @@ public class SemanticAnalyzer {
             return false;
         }
         Function Lastfunction = (Function) stack.peek();
-        if (Lastfunction.getName().equals("main") && (Lastfunction.getTYPE().equals("int") || Lastfunction.getTYPE().equals("void"))){
+        if (Lastfunction.getName().equals("main") && (Lastfunction.getTYPE().equals("int") || Lastfunction.getTYPE().equals("void"))) {
             return true;
-        }else {
+        } else {
             System.out.println("ERROR: The last method was not main method - or - the type was not int or void");
             return false;
         }
@@ -95,7 +95,7 @@ public class SemanticAnalyzer {
     private boolean parse_DDD() {
         if (token.getContents().equals("(")) {
             if (token.getDepth() == 0 && previousToken().getType().equals("ID")) {
-                functionName = previousToken().getContents();
+                String functionName = previousToken().getContents();
                 function = new Function(functionName);
                 function.setTYPE(prev2Token().getContents());
                 stack.push(function);
@@ -131,12 +131,13 @@ public class SemanticAnalyzer {
                 return false;
             }
             if (token.getContents().equals("}")) {
-                if (token.getDepth() <= 2){
-//                    System.out.println("--------------------------------------------");
-//                 //   System.out.println(Arrays.toString(tempVarList.toArray()));
-//                    System.out.println("-------------------------------------------------");
-
+                if (token.getDepth() <= 2) {
                     tempVarList.clear();
+                }
+                function = (Function) stack.peek();
+                if (token.getDepth() == 1 && !function.getTYPE().equals("void") && !function.getHasReturnStmt()) {
+                    System.out.println("Missing return statement on function: " + function.getName());
+                    return false;
                 }
                 Accept();
                 return true;
@@ -235,7 +236,32 @@ public class SemanticAnalyzer {
     }
 
     private boolean parse_expression() {
+        try {
+            function = (Function) stack.peek();
+            if (!typeHolder.getType().equals("null")) {
+                if (previousToken().getContents().equals("=")) {
+                    Tokens operand1 = function.getDeclaredDataOfToken(typeHolder);
+                    Tokens operand2 = function.getDeclaredDataOfToken(token);
+                    if (!operand1.getDeclaredType().equals(operand2.getDeclaredType())) { /////////////////////////////////////////////////////////////////////////
+                        System.out.println("types dont match: " + operand1.getContents() + " and " + operand2.getContents());
+                        return false;
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            //pass
+        }
         if (isID(token)) {
+            Tokens operand = function.getDeclaredDataOfToken(token);                                          //IF DOESNT EXIST DO A SYSTEM.EXIT(0)
+            try {
+                if (previousToken().getContents().equals("[") && operand.getDeclaredType().equals("float")) {
+                    System.out.println("cannot have float in array index");
+                    return false;
+                }
+            } catch (Exception e) {
+                //pass
+            }
             Accept();
             if (!parse_FFF()) {
                 return false;
@@ -257,6 +283,14 @@ public class SemanticAnalyzer {
             }
             return true;
         } else if (isNUM(token)) {
+            if (previousToken().getContents().equals("[")) {
+                try {
+                    int n = Integer.parseInt(token.getContents());
+                } catch (Exception e) {
+                    System.out.println("Index must be integer: " + token.getContents());
+                    return false;
+                }
+            }
             Accept();
             if (!parse_termPrime()) {
                 return false;
@@ -328,8 +362,9 @@ public class SemanticAnalyzer {
             } else return false;
         } else if (isID(token)) {
             function = (Function) stack.peek();
-            if (!function.hasThisVariableBeenDeclared(token)){
-                System.out.println("ERROR: This variablllllllle: " +  token.getContents() + " has no declaration in the function: " + function.getName());
+            if (!function.hasThisVariableBeenDeclared(token)) {
+                System.out.println("ERROR: This variable: " + token.getContents() + " has no declaration in the function: " + function.getName());
+                return false;
             }
             Accept();
             if (!parse_factorXYZ()) {
@@ -337,6 +372,12 @@ public class SemanticAnalyzer {
             }
             return true;
         } else if (isNUM(token)) {
+            try {
+                int x = Integer.parseInt(token.getContents());
+                token.setDeclaredType("int");
+            } catch (Exception e) {
+                token.setDeclaredType("float");
+            }
             Accept();
             return true;
         } else return false;
@@ -372,8 +413,9 @@ public class SemanticAnalyzer {
     private boolean parse_argList() {
         if (isID(token)) {
             function = (Function) stack.peek();
-            if (!function.hasThisVariableBeenDeclared(token)){
-                System.out.println("ERROR: This vwewewariablllllllle: " +  token.getContents() + " has no declaration in the function: " + function.getName());
+            if (!function.hasThisVariableBeenDeclared(token)) {
+                // System.out.println("ERROR: This vwewewariablllllllle: " + token.getContents() + " has no declaration in the function: " + function.getName());
+                return false;
             }
             Accept();
             if (!parse_CS()) {
@@ -541,12 +583,59 @@ public class SemanticAnalyzer {
     private boolean parse_relop() {
         if (token.getContents().equals("<=") || token.getContents().equals("<") || token.getContents().equals(">")
                 || token.getContents().equals(">=") || token.getContents().equals("==") || token.getContents().equals("!=")) {
+            checkLHSandRHS();
             Accept();
             return true;
         }
         return false;
     }
 
+    private void checkLHSandRHS(){
+        Tokens LHS = previousToken();
+        Tokens RHS = getNextToken();
+        int index = n;
+        while (LHS.getContents().equals(")")){
+            LHS = Main.tokensForSemantics.get(index = index - 1);
+        }
+        while (RHS.getContents().equals("(")){
+            RHS = Main.tokensForSemantics.get(index = index + 1);
+        }
+        function = (Function) stack.peek();
+        try {
+            if (Main.containsFloat(LHS.getContents())) {
+                try {
+                    int num = Integer.parseInt(LHS.getContents());
+                    LHS.setDeclaredType("int");
+                } catch (Exception e) {
+                    if (Main.containsFloat(LHS.getContents())) {
+                        LHS.setDeclaredType("float");
+                    }
+                }
+            } else {
+                LHS = function.getDeclaredDataOfToken(previousToken());
+            }
+
+            if (Main.containsFloat((RHS.getContents()))) {
+                try {
+                    int num = Integer.parseInt(RHS.getContents());
+                    RHS.setDeclaredType("int");
+                } catch (Exception e) {
+                    if (Main.containsFloat(RHS.getContents())) {
+                        RHS.setDeclaredType("float");
+                    }
+                }
+            } else {
+                RHS = function.getDeclaredDataOfToken(getNextToken());
+            }
+            if (!LHS.getDeclaredType().equals(RHS.getDeclaredType())) {
+                System.out.println("Left and right hand side of RELOPS do not match types: " + "--variable 1= " + LHS.getContents() + "--variable 2= " + RHS.getContents());
+            }
+        } catch (Exception e) {
+            if (!previousToken().getDeclaredType().equals(getNextToken().getDeclaredType())) {
+                System.out.println("DOES NOT MATCH: " + previousToken().getContents() + " --- " + getNextToken().getContents());
+            }
+        }
+    }
     private boolean parse_CS() {
         if (token.getContents().equals("(")) {
             Accept();
@@ -597,8 +686,15 @@ public class SemanticAnalyzer {
 
     private boolean parse_argListPrime() {
         if (token.getContents().equals(",")) {
-            numOfParamsinCall++;
-            methodCall.setNumOfParams(numOfParamsinCall);
+            try {
+                if (!methodCall.getMethodName().equals("null")) {
+                    numOfParamsinCall++;
+                    methodCall.setNumOfParams(numOfParamsinCall);
+                }
+            } catch (Exception e) {
+                //pass
+            }
+
             Accept();
             if (!parse_expression()) {
                 return false;
@@ -636,6 +732,7 @@ public class SemanticAnalyzer {
 
     private boolean parse_mulop() {
         if (token.getContents().equals("*") || token.getContents().equals("/")) {
+            checkLHSandRHS();
             Accept();
             return true;
         }
@@ -645,19 +742,19 @@ public class SemanticAnalyzer {
     private boolean parse_FFF() {
         Tokens anotherIDholder = previousToken();
         if (token.getContents().equals("(")) {
-            IDholder = previousToken();
+            Tokens IDholder = previousToken();
             methodCall = new MethodCall(IDholder);
             Accept();
             if (!parse_args()) {
                 return false;
             }
             if (token.getContents().equals(")")) {
-                if (methodCall.getNumOfParams() == 0 && !previousToken().getContents().equals("(")){
+                if (methodCall.getNumOfParams() == 0 && !previousToken().getContents().equals("(")) {
                     methodCall.setNumOfParams(1);
                 }
                 Accept();
             } else return false;
-            if (token.getContents().equals(";")){
+            if (token.getContents().equals(";")) {
                 if (IDholder != null) {
                     Function funct = new Function(IDholder.getContents());
                     function = funct;
@@ -667,7 +764,6 @@ public class SemanticAnalyzer {
                     }                                                         // This is where function call() is
                     numOfParamsinCall = 1;
                     isValidMethodCall(methodCall);
-                    // checkNumOfParamsInCallAndFunct(methodCall);
                 }
             }
             if (!parse_termPrime()) {
@@ -676,12 +772,15 @@ public class SemanticAnalyzer {
             if (!parse_SSS()) {
                 return false;
             }
+            methodCall.setToNull(methodCall);
             return true;
         } else {
-            function = (Function) stack.peek();
-            if (!function.hasThisVariableBeenDeclared(anotherIDholder)){
-                System.out.println("ERROR: This variable: " +  anotherIDholder.getContents() + " has no declaration in the function: " + function.getName());
+            function = (Function) stack.peek();                                                       //WHERE VARIABLES ARE SEARCHED FOR
+            if (!function.hasThisVariableBeenDeclared(anotherIDholder)) {
+                System.out.println("ERROR: This variable: " + anotherIDholder.getContents() + " has nooooooooooooo declaration in the function: " + function.getName());
+                return false;
             }
+
             if (!parse_varPrime()) {
                 return false;
             }
@@ -694,21 +793,28 @@ public class SemanticAnalyzer {
 
     private void isValidMethodCall(MethodCall methodCall) {
         Function call = new Function(methodCall);
-        if (!functionList.SearchLinearProbe(call)){
+        if (!functionList.SearchLinearProbe(call)) {
             System.out.println("Method call before declaration: " + methodCall.getMethodName());
             return;
         }
 
         Function functionFromFunctList = functionList.SearchByFunction(call.getName());
 
-        if (methodCall.getNumOfParams() != functionFromFunctList.getNumOfVariablesInParams()){
+        if (methodCall.getNumOfParams() != functionFromFunctList.getNumOfVariablesInParams()) {
             System.out.println("ERROR: Params do not match function: " + call.getName());
+            System.out.println("REJECT");
+            System.exit(0);
         }
 
     }
 
     private boolean parse_varPrime() {
         if (token.getContents().equals("[")) {
+            function = (Function) stack.peek();
+            if (!function.isThisAnArray(previousToken())) {
+                System.out.println("ERROR: Indexing operator [] cannot be used on the variable: " + previousToken().getContents());
+                return false;
+            }
             Accept();
             if (!parse_expression()) {
                 return false;
@@ -731,6 +837,7 @@ public class SemanticAnalyzer {
     }
 
     private boolean parse_XXX() {
+        typeHolder = previousToken();
         if (token.getContents().equals("=")) {
             Accept();
             if (!parse_expression()) {
@@ -739,6 +846,7 @@ public class SemanticAnalyzer {
             if (!parse_argListPrime()) {
                 return false;
             }
+            typeHolder.setType("null");
             return true;
         } else {
             if (!parse_termPrime()) {
@@ -774,6 +882,7 @@ public class SemanticAnalyzer {
 
     private boolean parse_addop() {
         if (token.getContents().equals("+") || token.getContents().equals("-")) {
+            checkLHSandRHS();
             Accept();
             return true;
         }
@@ -825,8 +934,27 @@ public class SemanticAnalyzer {
     private boolean parse_returnStmt() {
         if (token.getContents().equals("return")) {
             function = (Function) stack.peek();
-            if (token.getDepth() == 1 && function.getTYPE().equals("void") && !getNextToken().getContents().equals(";")){
+            if (token.getDepth() == 1 && function.getTYPE().equals("void") && !getNextToken().getContents().equals(";")) {
                 System.out.println("ERROR: Void functions cannot return a value");
+                return false;
+            }
+            if (token.getDepth() == 1) {
+                function.setHasReturnStmt(true);
+                if (!getNextToken().getContents().equals(";")) {
+                    Tokens nextToken = function.getDeclaredDataOfToken(getNextToken());
+                    if (function.getDeclaredDataOfToken(getNextToken()) == null) {
+                        System.out.println("ERROR: Cannot find value in return statement: " + getNextToken().getContents());
+                        return false;
+                    }
+                    try {
+                        if (!nextToken.getDeclaredType().equals(function.getTYPE())) {
+                            System.out.println("Return statement does not match the function type: " + function.getName());
+                        }
+
+                    } catch (Exception e) {
+                        //pass
+                    }
+                }
             }
             Accept();
             if (!parse_returnStmtPrime()) {
@@ -839,6 +967,7 @@ public class SemanticAnalyzer {
 
     private boolean parse_expressionStmt() {
         if (token.getContents().equals(";")) {
+            typeHolder.setType("null");
             Accept();
             return true;
         } else if (token.getContents().equals("(") || isID(token) || isNUM(token)) {
@@ -846,6 +975,7 @@ public class SemanticAnalyzer {
                 return false;
             }
             if (token.getContents().equals(";")) {
+                typeHolder.setType("null");
                 Accept();
             }
             return true;
@@ -893,6 +1023,7 @@ public class SemanticAnalyzer {
         return false;
     }
 
+    //-------------------------------------------------------------------------------------
     private Tokens getNextToken() {
         Tokens nextToken = Main.tokensForSemantics.get(n + 1);
         return nextToken;
@@ -908,6 +1039,7 @@ public class SemanticAnalyzer {
         return prev2Token;
     }
 
+    //------------------------------------------------------------------------------------------
     private boolean parse_paramList() {
         if (!parse_param()) {
             return false;
@@ -942,19 +1074,19 @@ public class SemanticAnalyzer {
         if (isID(token)) {
             Accept();
             function = (Function) stack.peek();
-            if (token.getContents().equals("[")){
+            if (token.getContents().equals("[")) {
                 previousToken().setArray(true);
                 previousToken().setDeclaredType(prev2Token().getContents());
-                try{                                                   // ATTEMPTS TO SET ARRAY SIZE IF VALID INTEGER
-                    if (!getNextToken().getContents().equals("]")){
+                try {                                                   // ATTEMPTS TO SET ARRAY SIZE IF VALID INTEGER
+                    if (!getNextToken().getContents().equals("]")) {
                         int arrSize = Integer.parseInt(getNextToken().getContents());
                         previousToken().setArraySize(arrSize);
                     }
-                }catch (Exception e){
+                } catch (Exception e) {
                     //pass
                 }
                 function.addToParamList(previousToken());
-            }else{
+            } else {
                 previousToken().setArray(false);
                 previousToken().setDeclaredType(prev2Token().getContents());
                 function.addToParamList(previousToken());
@@ -997,55 +1129,66 @@ public class SemanticAnalyzer {
 
     private boolean parse_varDeclarationPrime() {
         if (token.getContents().equals(";")) {
-            if (token.getDepth() == 0){
-                previousToken().setDeclaredType(prev2Token().getContents());
+            if (token.getDepth() == 0) {
+                if (!prev2Token().getContents().equals("void")) {
+                    previousToken().setDeclaredType(prev2Token().getContents());
+                } else {
+                    System.out.println("ERROR: Variable cannot be declared as type VOID");
+                    return false;
+                }
                 globalVariables.add(previousToken());    // CREATE GLOBAL VARIABLES
                 Accept();
                 return true;
-            }else {
+            } else {
+                if (!prev2Token().getContents().equals("void")) {
+                    previousToken().setDeclaredType(prev2Token().getContents());
+                } else {
+                    System.out.println("ERROR: Variable " + previousToken().getContents() + " " + "cannot be declared as type VOID");
+                    return false;
+                }
                 previousToken().setDeclaredType(prev2Token().getContents());
 
                 //SEARCH TO SEE IF VARIABLE ALREADY EXISTS
                 function.containsThisDeclarationAlready(previousToken());
 
-                if (token.getDepth() == 1){
+                if (token.getDepth() == 1) {
                     function.putInFunctionVarList(previousToken());   // ADD VARIABLE TO FUNCTION'S VARIABLE LIST
                 }
                 variableList.add(previousToken());
-                if (token.getDepth() > 1){
+                if (token.getDepth() > 1) {
                     tempVarList.add(previousToken());
                 }
                 Accept();
                 return true;
             }
         } else if (token.getContents().equals("[")) {
-            if (token.getDepth() == 0){
+            if (token.getDepth() == 0) {
                 previousToken().setDeclaredType(prev2Token().getContents());
                 previousToken().setArray(true);
                 globalVariables.add(previousToken());           // CREATE GLOBAL VARIABLES
-            }else {
+            } else {
                 previousToken().setDeclaredType(prev2Token().getContents());
                 previousToken().setArray(true);
 
                 //SEARCH TO SEE IF VARIABLE ALREADY EXISTS
                 function.containsThisDeclarationAlready(previousToken());
 
-                if (token.getDepth() == 1){
+                if (token.getDepth() == 1) {
                     function.putInFunctionVarList(previousToken());  //ADD VARIABLE TO FUNCTION'S VARIABLE LIST
                 }
-                if (token.getDepth() > 1){
+                if (token.getDepth() > 1) {
                     tempVarList.add(previousToken());
                 }
                 variableList.add(previousToken());
             }
             Accept();
             if (isNUM(token)) {
-                try{
-                    if (!token.getContents().equals("]")){
+                try {
+                    if (!token.getContents().equals("]")) {
                         int arrSize = Integer.parseInt(token.getContents());
                         prev2Token().setArraySize(arrSize);
                     }
-                }catch (Exception e){       // HANDLES THE EXCEPTION IF ARRAY INDEX IS NOT INTEGER
+                } catch (Exception e) {       // HANDLES THE EXCEPTION IF ARRAY INDEX IS NOT INTEGER
                     System.out.println("Number format Exception for input: " + token.getContents());
                     return false;
                 }
@@ -1081,7 +1224,7 @@ public class SemanticAnalyzer {
 
     private boolean parse_TypeSpecifier() {
         if (token.getContents().equals("int") || token.getContents().equals("float") || token.getContents().equals("void")) {
-            Type = token.getContents();
+            String type = token.getContents();
             Accept();
             return true;
         } else return false;

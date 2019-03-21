@@ -7,7 +7,7 @@ public class Tokens {
     private int commentDepth = 0;
     private Boolean isComment;
     private Boolean isArray = false;
-    private String declaredType;
+    private String declaredType = "null";
     private int arraySize;
     private Boolean isMethodCall;
 
