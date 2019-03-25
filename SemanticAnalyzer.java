@@ -415,8 +415,16 @@ class SemanticAnalyzer {
         if (isID(token)) {
             function = (Function) stack.peek();
             if (!function.hasThisVariableBeenDeclared(token)) {
-                // System.out.println("ERROR: This vwewewariablllllllle: " + token.getContents() + " has no declaration in the function: " + function.getName());
-                return false;
+                if (getNextToken().getContents().equals("(")){
+                    Function newMethodCall = new Function(token.getContents());
+                    if (!functionList.SearchLinearProbe(newMethodCall)){
+                        System.out.println("Method does not exist: " + newMethodCall.getName());
+                        return false;
+                    }
+                }else {
+                    System.out.println("ERROR: This vwewewariablllllllle: " + token.getContents() + " has no declaration in the function: " + function.getName());
+                    return false;
+                }
             }
             Accept();
             if (!parse_CS()) {
@@ -699,7 +707,7 @@ class SemanticAnalyzer {
             while (LHS.getContents().equals(")")){
                 LHS = Main.tokensForSemantics.get(index = index - 1);
             }
-
+            Tokens tstToken = new Tokens(LHS.getContents());
             LHS = function.getDeclaredDataOfToken(LHS);
 
             Function otherFunction = functionList.SearchByFunction(methodCall.getMethodName());
@@ -711,7 +719,20 @@ class SemanticAnalyzer {
                 }
                 paramIndex++;
             }catch (Exception e){
-
+                try {
+                    int num = Integer.parseInt(tstToken.getContents());
+                    tstToken.setDeclaredType("int");
+                    paramIndex++;
+                } catch (Exception ex) {
+                    if (Main.containsFloat(tstToken.getContents())) {
+                        tstToken.setDeclaredType("float");
+                    }
+                    paramIndex++;
+                }
+                if (!tstToken.getDeclaredType().equals(otherFunction.getParamVarByIndex(paramIndex).getDeclaredType())){
+                    System.out.println("ERROR: Param types do not match in the method call: " + methodCall.getMethodName());
+                    return false;
+                }
             }
 
             try {
