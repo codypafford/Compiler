@@ -778,8 +778,6 @@ class SemanticAnalyzer {
                 }
             }
 
-
-
             Accept();
             if (!parse_expression()) {
                 return false;
@@ -798,6 +796,9 @@ class SemanticAnalyzer {
                 }
             } catch (Exception e) {
                 //pass
+            }
+            if (token.getContents().equals(")") && getNextToken().getContents().equals(";")){
+               // paramIndex = 0;
             }
             paramIndex = 0;
             return true;
@@ -871,8 +872,10 @@ class SemanticAnalyzer {
                         System.out.println("Method call before declaration: " + function.getName());
                         return false;
                     }
-                    numOfParamsinCall = 1;     //RESETS THE NUMBER OF PARAMS IN CALL COUNTER
+
                     isValidMethodCall(methodCall);
+                    numOfParamsinCall = 1;     //RESETS THE NUMBER OF PARAMS IN CALL COUNTER
+
                 }
             }
             if (!parse_termPrime()) {
@@ -938,10 +941,12 @@ class SemanticAnalyzer {
         Function functionFromFunctList = functionList.SearchByFunction(call.getName());
 
         if (methodCall.getNumOfParams() != functionFromFunctList.getNumOfVariablesInParams()) {
-            System.out.println("ERROR: Params do not matchhh function: " + call.getName());
+            System.out.println("method call num of params: " + methodCall.getNumOfParams());
+            System.out.println("ERROR: Params do not matchhh function: " + methodCall.getMethodName() + " " +functionFromFunctList.getNumOfVariablesInParams());
             System.out.println("REJECT");
             System.exit(0);
         }
+        numOfParamsinCall = 1;
 
     }
 
