@@ -18,6 +18,7 @@ class SemanticAnalyzer {
     private Function function;
     private int numOfParamsinCall = 1;
     private MethodCall methodCall;
+    private MethodCall methodCall2;
     private Tokens typeHolder;
     private int paramIndex = 0;
 
@@ -363,7 +364,7 @@ class SemanticAnalyzer {
             } else return false;
         } else if (isID(token)) {
             function = (Function) stack.peek();
-            if (!function.hasThisVariableBeenDeclared(token)) {
+            if (!function.hasThisVariableBeenDeclared(token) && !getNextToken().getContents().equals("(")) {
                 System.out.println("ERROR: This variable: " + token.getContents() + " has no declaration in the function: " + function.getName());
                 return false;
             }
@@ -385,13 +386,21 @@ class SemanticAnalyzer {
     }
 
     private boolean parse_factorXYZ() {
+        function = (Function) stack.peek();
+        //STORES METHOD CALL AS OBJECT
+
         if (token.getContents().equals("(")) {
+            methodCall  = new MethodCall(previousToken());
             Accept();
             if (!parse_args()) {
                 return false;
             }
+
             if (token.getContents().equals(")")) {
                 Accept();
+
+                isValidMethodCall(methodCall);
+
                 return true;
             } else return false;
         } else {
@@ -641,14 +650,49 @@ class SemanticAnalyzer {
                 System.out.println("Left and right hand side of RELOPS do not match types: " + "--variable 1= " + LHS.getContents() + "--variable 2= " + RHS.getContents());
                 System.out.println("REJECT");
                 System.exit(0);
-            }
+
+            } //-------------------------------------------------------------------------------------------------------------------------------------------------
+
         } catch (Exception e) {
             //COMPARES THE VALUES IF THEY ARE OF INTEGER OR FLOAT SUCH AS '5' OR '2.3'
-            if (!previousToken().getDeclaredType().equals(getNextToken().getDeclaredType())) {
-                System.out.println("DOES NOT MATCH: " + previousToken().getContents() + " --- " + getNextToken().getContents());
-                System.out.println("REJECT");
-                System.exit(0);
+            if (LHS != null && RHS != null) {
+                if (!previousToken().getDeclaredType().equals(getNextToken().getDeclaredType())) {
+                    System.out.println("DOES NOT MATCH: " + previousToken().getContents() + " --- " + getNextToken().getDeclaredType());
+                    System.out.println("REJECT");
+                    System.exit(0);
+                }
             }
+            else if (LHS != null && RHS == null){  //IF RHS OF OPERATOR IS A FUNCTION CALL AND LHS IS NOT
+                if (getNext2Token().getContents().equals("(")) {
+                    Function funct = new Function(getNextToken().getContents());
+                    if (!functionList.SearchLinearProbe(funct)) {
+                        System.out.println("function not found: " + funct.getName());
+                        System.out.println("REJECT");
+                        System.exit(0);
+                    }
+                    function = (Function) stack.peek();  //GETS THE CURRENT FUNCTION THAT I AM IN
+                    try {
+
+                    funct = functionList.SearchByFunction(getNextToken().getContents());
+                        try {
+                            int num = Integer.parseInt(previousToken().getContents());
+                            previousToken().setDeclaredType("int");
+                        } catch (Exception er) {
+                            if (Main.containsFloat(previousToken().getContents())) {
+                                previousToken().setDeclaredType("float");
+                            }
+                        }
+
+                    }catch (Exception ee){
+                        if (!functionList.SearchLinearProbe(funct)){
+                            System.out.println("NOTTTT FOUNDDD");
+                            System.out.println("REJECT");
+                            System.exit(0);
+                        }
+                    }
+                }
+            }
+
         }
     }
     private boolean parse_CS() {
@@ -701,8 +745,10 @@ class SemanticAnalyzer {
 
     private boolean parse_argListPrime() {
         if (token.getContents().equals(",")) {
+            numOfParamsinCall++;
             function = (Function) stack.peek();
             Tokens LHS = previousToken();
+
             int index = n;
             while (LHS.getContents().equals(")")){
                 LHS = Main.tokensForSemantics.get(index = index - 1);
@@ -726,23 +772,13 @@ class SemanticAnalyzer {
                 } catch (Exception ex) {
                     if (Main.containsFloat(tstToken.getContents())) {
                         tstToken.setDeclaredType("float");
+                        paramIndex++;
                     }
-                    paramIndex++;
-                }
-                if (!tstToken.getDeclaredType().equals(otherFunction.getParamVarByIndex(paramIndex).getDeclaredType())){
-                    System.out.println("ERROR: Param types do not match in the method call: " + methodCall.getMethodName());
-                    return false;
+
                 }
             }
 
-            try {
-                if (!methodCall.getMethodName().equals("null")) {
-                    numOfParamsinCall++;
-                    methodCall.setNumOfParams(numOfParamsinCall);
-                }
-            } catch (Exception e) {
-                //pass
-            }
+
 
             Accept();
             if (!parse_expression()) {
@@ -751,9 +787,18 @@ class SemanticAnalyzer {
             if (!parse_argListPrime()) {
                 return false;
             }
-            paramIndex = 0;
+           // paramIndex = 0;
+
             return true;
         } else if (token.getContents().equals(")") || token.getContents().equals(";") || token.getContents().equals("]")) {
+            try {
+                if (!methodCall.getMethodName().equals("null")) {
+                   // numOfParamsinCall++;
+                    methodCall.setNumOfParams(numOfParamsinCall);
+                }
+            } catch (Exception e) {
+                //pass
+            }
             paramIndex = 0;
             return true;
         }
@@ -785,6 +830,18 @@ class SemanticAnalyzer {
         if (token.getContents().equals("*") || token.getContents().equals("/")) {
             //MAKE SURE LEFT HAND SIDE AND RIGHT HAND SIDE ARE OF THE SAME TYPE
             checkLHSandRHS();
+            try {
+                if (getNextToken().getType().equals("ID") && getNext2Token().getContents().equals("(")) {
+                    Function fun = new Function(getNextToken().getContents());
+                    if (!functionList.SearchLinearProbe(fun)) {
+                        System.out.println("invalid function: " + fun.getName());
+                        System.out.println("REJECT");
+                        System.exit(0);
+                    }
+                }
+            }catch (Exception e){
+                //pass
+            }
             Accept();
             return true;
         }
@@ -801,27 +858,8 @@ class SemanticAnalyzer {
                 return false;
             }
             if (token.getContents().equals(")")) {
-                if (methodCall.getNumOfParams() == 0 && !previousToken().getContents().equals("(")) {
-                    methodCall.setNumOfParams(1);
-                }
 
-                Tokens newtoken = previousToken();  // GET THE TOKEN THAT APPEARS BEFORE THE ')' WHICH WILL LOOK LIKE THIS:  CALL(x, y)
-                int index = n;
-                while (newtoken.getContents().equals(")")){
-                    newtoken = Main.tokensForSemantics.get(index = index - 1);
-                }
-
-                newtoken = function.getDeclaredDataOfToken(newtoken);
-
-                Function otherFunction = functionList.SearchByFunction(methodCall.getMethodName());
-                try {
-                    if (!newtoken.getDeclaredType().equals(otherFunction.getParamVarByIndex(otherFunction.getVariablesInParams().size() - 1).getDeclaredType())) {
-                        System.out.println("Param types do not match in the function: " + function.getName());
-                        return false;
-                    }
-                }catch (Exception e){
-                    //pass
-                }
+                compareTypeOfParamsInCall();
                 Accept();
             } else return false;
             if (token.getContents().equals(";")) {
@@ -832,8 +870,8 @@ class SemanticAnalyzer {
                     if (!functionList.SearchLinearProbe(funct)) {
                         System.out.println("Method call before declaration: " + function.getName());
                         return false;
-                    }                                                         // This is where function call() is
-                    numOfParamsinCall = 1;
+                    }
+                    numOfParamsinCall = 1;     //RESETS THE NUMBER OF PARAMS IN CALL COUNTER
                     isValidMethodCall(methodCall);
                 }
             }
@@ -862,6 +900,32 @@ class SemanticAnalyzer {
         }
     }
 
+    private void compareTypeOfParamsInCall() {
+        if (methodCall.getNumOfParams() == 0 && !previousToken().getContents().equals("(")) {
+            methodCall.setNumOfParams(1);
+        }
+
+        Tokens newtoken = previousToken();  // GET THE TOKEN THAT APPEARS BEFORE THE ')' WHICH WILL LOOK LIKE THIS:  CALL(x, y)
+        int index = n;
+        while (newtoken.getContents().equals(")")){
+            newtoken = Main.tokensForSemantics.get(index = index - 1);
+        }
+
+        newtoken = function.getDeclaredDataOfToken(newtoken);
+
+        Function otherFunction = functionList.SearchByFunction(methodCall.getMethodName());
+        try {
+            if (!newtoken.getDeclaredType().equals(otherFunction.getParamVarByIndex(otherFunction.getVariablesInParams().size() - 1).getDeclaredType())) {
+                System.out.println("Param types do not match in the function: " + function.getName());
+                System.out.println("REJECT");
+                System.exit(0);
+            }
+        }catch (Exception e){
+            //pass
+        }
+
+    }
+
     private void isValidMethodCall(MethodCall methodCall) {
         Function call = new Function(methodCall);
         if (!functionList.SearchLinearProbe(call)) {
@@ -874,7 +938,7 @@ class SemanticAnalyzer {
         Function functionFromFunctList = functionList.SearchByFunction(call.getName());
 
         if (methodCall.getNumOfParams() != functionFromFunctList.getNumOfVariablesInParams()) {
-            System.out.println("ERROR: Params do not match function: " + call.getName());
+            System.out.println("ERROR: Params do not matchhh function: " + call.getName());
             System.out.println("REJECT");
             System.exit(0);
         }
@@ -912,6 +976,20 @@ class SemanticAnalyzer {
     private boolean parse_XXX() {
         typeHolder = previousToken();
         if (token.getContents().equals("=")) {
+            if (getNext2Token().getContents().equals("(")){
+                Function ff = new Function(getNextToken().getContents());
+                if (!functionList.SearchLinearProbe(ff)){
+                    System.out.println("function does not exist: " + ff.getName());
+                    return false;
+                }
+                Function funct = functionList.SearchByFunction(getNextToken().getContents());
+                function = (Function) stack.peek();  //GETS THE CURRENT FUNCTION THAT I AM IN
+                Tokens t = function.getDeclaredDataOfToken(previousToken());  //GETS THE ACTUAL DATA FROM THE TOKEN THAT APPEARS BEFORE THE '='
+                if (!funct.getTYPE().equals(t.getDeclaredType())){
+
+                    System.out.println("types dont match: " + funct.getTYPE() + " " + t.getDeclaredType());
+                }
+            }
             Accept();
             if (!parse_expression()) {
                 return false;
@@ -956,6 +1034,18 @@ class SemanticAnalyzer {
     private boolean parse_addop() {
         if (token.getContents().equals("+") || token.getContents().equals("-")) {
             checkLHSandRHS();
+            try {
+                if (getNextToken().getType().equals("ID") && getNext2Token().getContents().equals("(")) {
+                    Function fun = new Function(getNextToken().getContents());
+                    if (!functionList.SearchLinearProbe(fun)) {
+                        System.out.println("invalid function");
+                        System.out.println("REJECT");
+                        System.exit(0);
+                    }
+                }
+            }catch (Exception e){
+                //pass
+            }
             Accept();
             return true;
         }
@@ -1011,7 +1101,7 @@ class SemanticAnalyzer {
                 System.out.println("ERROR: Void functions cannot return a value");
                 return false;
             }
-            if (token.getDepth() == 1) {
+            if (token.getDepth() >= 0) {
                 function.setHasReturnStmt(true);
                 if (!getNextToken().getContents().equals(";")) {
                     Tokens nextToken = function.getDeclaredDataOfToken(getNextToken());
@@ -1111,6 +1201,11 @@ class SemanticAnalyzer {
     private Tokens prev2Token() {
         Tokens prev2Token = Main.tokensForSemantics.get(n - 2);
         return prev2Token;
+    }
+
+    private Tokens getNext2Token(){
+        Tokens next2Token = Main.tokensForSemantics.get(n + 2);
+        return next2Token;
     }
 
     //------------------------------------------------------------------------------------------
