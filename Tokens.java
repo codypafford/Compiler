@@ -5,13 +5,12 @@ public class Tokens {
     private Boolean isValid = true;
     private int depth = 0;
     private int commentDepth = 0;
-    private Boolean isComment;
     private Boolean isArray = false;
     private String declaredType = "null";
     private int arraySize;
-    private Boolean isMethodCall;
+    private String trueValue;
 
-    public Tokens(String token){
+    Tokens(String token){
         contents = token;
         if (isNumeric(token)){
             type = "NUM";
@@ -28,98 +27,86 @@ public class Tokens {
         }
     }
 
-    public static boolean isNumeric(String str)
+    private static boolean isNumeric(String str)
     {
         return str.matches("-?\\d+(\\.\\d+)?");  //match a number with optional '-' and decimal.
     }
 
-    public boolean isAlpha(String name) {
+    private boolean isAlpha(String name) {
         return name.matches("[a-zA-Z]+");
     }
 
-    public void setValid(Boolean valid) {
+    void setValid(Boolean valid) {
         isValid = valid;
     }
 
 
     @Override
     public String toString() {
-        return (String.format("Contents= %5s isArray= %5s declaredType= %5s ArraySize= %5s ",Function.ANSI_PURPLE+ contents + Function.ANSI_RESET, Function.ANSI_GREEN + isArray+
-                Function.ANSI_RESET, Function.ANSI_RED+ declaredType+ Function.ANSI_RESET, Function.ANSI_CYAN + arraySize + Function.ANSI_RESET));
+        return (String.format("Contents= %5s isArray= %5s declaredType= %5s ArraySize= %5s ",contents, isArray, declaredType, arraySize));
     }
 
-    public String getType() {
+    String getType() {
         return type;
     }
 
-    public void setType(String type) {
+    void setType(String type) {
         this.type = type;
     }
 
-    public String getContents() {
+    String getContents() {
         return contents;
     }
 
-    public Boolean getIsComment() {
-        return isComment;
+    void setDepth(int depth) {
+        this.depth = depth;
     }
 
-    public void setIsComment(Tokens token) {
-       if (token.commentDepth != 0){
-           isComment = true;
-       }
+    int getCommentDepth() {
+        return commentDepth;
+    }
 
+    void setCommentDepth(int commentDepth) {
+        this.commentDepth = commentDepth;
+    }
+
+    int getDepth() {
+        return depth;
+    }
+
+    Boolean getArray() {
+        return isArray;
+    }
+
+    void setArray(Boolean array) {
+        isArray = array;
+    }
+
+    String getDeclaredType() {
+        return declaredType;
+    }
+
+    void setDeclaredType(String declaredType) {
+        this.declaredType = declaredType;
+    }
+
+    Boolean getValid() {
+        return isValid;
     }
 
     public void setContents(String contents) {
         this.contents = contents;
     }
 
-    public void setDepth(int depth) {
-        this.depth = depth;
-    }
-
-    public int getCommentDepth() {
-        return commentDepth;
-    }
-
-    public void setCommentDepth(int commentDepth) {
-        this.commentDepth = commentDepth;
-    }
-
-    public int getDepth() {
-        return depth;
-    }
-
-    public Boolean getArray() {
-        return isArray;
-    }
-
-    public void setArray(Boolean array) {
-        isArray = array;
-    }
-
-    public String getDeclaredType() {
-        return declaredType;
-    }
-
-    public void setDeclaredType(String declaredType) {
-        this.declaredType = declaredType;
-    }
-
-    public Boolean getMethodCall() {
-        return isMethodCall;
-    }
-
-    public void setMethodCall(Boolean methodCall) {
-        isMethodCall = methodCall;
-    }
-
-    public Boolean getValid() {
-        return isValid;
-    }
-
-    public void setArraySize(int arraySize) {
+    void setArraySize(int arraySize) {
         this.arraySize = arraySize;
+    }
+
+    public String getTrueValue() {
+        return trueValue;
+    }
+
+    public void setTrueValue(String trueValue) {
+        this.trueValue = trueValue;
     }
 }
