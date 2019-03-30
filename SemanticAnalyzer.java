@@ -1201,46 +1201,7 @@ class SemanticAnalyzer {
         }
         //---------------------------------------------------------------
         if (token.getContents().equals("=")) {
-            if (getNext2Token().getContents().equals("(")) {
-                Function ff = new Function(getNextToken().getContents());
-   //***********************                 // i dont think i need this because of my new and improved checkLHSAndRHS()     **************************************************
 
-//                if (!functionList.SearchLinearProbe(ff)) {
-//                    System.out.println("function does not exist: " + ff.getName());
-//                    return false;
-//                }
-//                try {
-//                    Function funct = functionList.SearchByFunction(getNextToken().getContents());
-//                    function = (Function) stack.peek();  //GETS THE CURRENT FUNCTION THAT I AM IN
-//                    Tokens t = function.getDeclaredDataOfToken(previousToken());  //GETS THE ACTUAL DATA FROM THE TOKEN THAT APPEARS BEFORE THE '='
-//                    if (!funct.getTYPE().equals(t.getDeclaredType())) {
-//
-//                        System.out.println("types dont match: " + funct.getTYPE() + " " + t.getDeclaredType());
-//                    }
-//                } catch (Exception e) {
-//                    //pass
-//                }
-            }
-            //IF PREVIOUS TOKEN WAS AN INT ARRAY TYPE, CHECK THAT IT IS NOT ASSIGNING A FLOAT TO IT
-//            if (previousToken().getContents().equals("]")) {
-//                int in = n;
-//                Tokens t = previousToken();
-//                while (!t.getContents().equals("[")) {
-//                    t = Main.tokensForSemantics.get(in = in - 1);
-//                }
-//                t = Main.tokensForSemantics.get(in - 1);
-//                Tokens arrayToken = function.getDeclaredDataOfToken(t);
-//                Tokens nextToken = function.getDeclaredDataOfToken(getNextToken());
-//                if (nextToken == null) {
-//                    nextToken = determineIfNumFloatOrVar(getNextToken());
-//                }
-//                if (!arrayToken.getDeclaredType().equals(nextToken.getDeclaredType())) {
-//                    System.out.println(nextToken.getDeclaredType());
-//                    System.out.println("Array type does not equal whats on the other side of the '=' sign: ");
-//                    System.out.println("REJECT");
-//                    System.exit(0);
-//                }
-//            }
             Accept();
             if (!parse_expression()) {
                 return false;
@@ -1306,33 +1267,6 @@ class SemanticAnalyzer {
     private boolean parse_addop() {
         if (token.getContents().equals("+") || token.getContents().equals("-")) {
             checkLHSandRHS();
-//
-//            try {
-//                if (getNextToken().getType().equals("ID") && getNext2Token().getContents().equals("(") && !previousToken().getContents().equals(")")) {
-//                    Function f = functionList.SearchByFunction(getNextToken().getContents());
-//                    Tokens prev = function.getDeclaredDataOfToken(previousToken());
-//                    if (!f.getTYPE().equals(prev.getDeclaredType())) {
-//                        System.out.println("mismatch of typess: " + f.getTYPE() + " " + prev.getDeclaredType());
-//                        System.out.println("REJECT");
-//                        System.exit(0);
-//                    }
-//
-//                }
-//            } catch (Exception e) {
-//                //pass
-//            }
-//            try {
-//                if (getNextToken().getType().equals("ID") && getNext2Token().getContents().equals("(")) {
-//                    Function fun = new Function(getNextToken().getContents());
-//                    if (!functionList.SearchLinearProbe(fun)) {
-//                        System.out.println("invalid function!");
-//                        System.out.println("REJECT");
-//                        System.exit(0);
-//                    }
-//                }
-//            } catch (Exception e) {
-//                //pass
-//            }
             Accept();
             return true;
         }
