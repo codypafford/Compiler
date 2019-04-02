@@ -60,8 +60,17 @@ public class Function {
         variablesInFunction.add(token);
     }
 
-    public Boolean containsThisDeclarationAlready(Tokens token){
+    //CHECK IF DECLARATION ALREADY EXISTS
+    public void containsThisDeclarationAlready(Tokens token){
         String nameOfDeclaration = token.getContents();
+        for (int i = 0; i < variablesInParams.size(); i++){
+            Tokens t = variablesInParams.get(i);
+            if (t.getContents().equals(nameOfDeclaration) && token.getDepth() == 1){
+                System.out.println("ERROR: This variable: " +  nameOfDeclaration + " has already been declared in the function: " + name + " with depth: " + t.getDepth());
+                System.out.println("REJECT");
+                System.exit(0);
+            }
+        }
         for (int i = 0; i < variablesInFunction.size(); i++) {
 
             Tokens t = variablesInFunction.get(i);
@@ -80,7 +89,6 @@ public class Function {
             }
         }
 
-        return null;
     }
 
     public Boolean hasThisVariableBeenDeclared(Tokens token){

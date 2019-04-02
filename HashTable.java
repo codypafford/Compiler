@@ -119,8 +119,27 @@ class HashTable {
         for (int i = 0; i < hashArray.length; i++) {
             if (hashArray[i] != null) {
                 Function f = hashArray[i];
-                 System.out.println(Function.ANSI_GREEN + f);
+                 System.out.println( f);
                 System.out.println("");
+            }
+        }
+    }
+
+    void checkForDuplicates(){
+        for (int i = 0; i < hashArray.length; i++) {
+            for (int j = i + 1 ; j < hashArray.length; j++) {
+
+                Function f = hashArray[i];
+                Function f1 = hashArray[j];
+                try {
+                    if (f.getName().equals(f1.getName())) {
+                        System.out.println("duplicate function: " + f.getName());
+                        System.out.println("REJECT");
+                        System.exit(0);
+                    }
+                }catch (Exception e){
+                    //pass
+                }
             }
         }
     }
