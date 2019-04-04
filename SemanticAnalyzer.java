@@ -52,7 +52,7 @@ class SemanticAnalyzer {
         if (Lastfunction.getName().equals("main") && (Lastfunction.getTYPE().equals("int") || Lastfunction.getTYPE().equals("void"))) {
             return true;
         } else {
-            System.out.println("ERROR: The last method was not main method - or - the type was not int or void");
+          System.out.println("ERROR: The last method was not main method - or - the type was not int or void");
             return false;
         }
     }
@@ -139,7 +139,7 @@ class SemanticAnalyzer {
                 }
                 function = (Function) stack.peek();
                 if (token.getDepth() == 1 && !function.getTYPE().equals("void") && !function.getHasReturnStmt()) {
-                    System.out.println("Missing return statement on function: " + function.getName());
+                  System.out.println("Missing return statement on function: " + function.getName());
                     return false;
                 }
                 Accept();
@@ -246,7 +246,7 @@ class SemanticAnalyzer {
                     Tokens operand1 = function.getDeclaredDataOfToken(typeHolder);
                     Tokens operand2 = function.getDeclaredDataOfToken(token);
                     if (!operand1.getDeclaredType().equals(operand2.getDeclaredType())) { /////////////////////////////////////////////////////////////////////////
-                        System.out.println("types dont match: " + operand1.getContents() + " and " + operand2.getContents());
+                      System.out.println("types dont match: " + operand1.getContents() + " and " + operand2.getContents());
                         return false;
                     }
                 }
@@ -259,7 +259,7 @@ class SemanticAnalyzer {
             Tokens operand = function.getDeclaredDataOfToken(token);                                          //IF DOESNT EXIST DO A SYSTEM.EXIT(0)
             try {
                 if (previousToken().getContents().equals("[") && operand.getDeclaredType().equals("float")) {
-                    System.out.println("cannot have float in array index");
+                  System.out.println("cannot have float in array index");
                     return false;
                 }
             } catch (Exception e) {
@@ -290,7 +290,7 @@ class SemanticAnalyzer {
                 try {
                     int n = Integer.parseInt(token.getContents());
                 } catch (Exception e) {
-                    System.out.println("Index must be integer: " + token.getContents());
+                 System.out.println("Index must be integer: " + token.getContents());
                     return false;
                 }
             }
@@ -366,7 +366,7 @@ class SemanticAnalyzer {
         } else if (isID(token)) {
             function = (Function) stack.peek();
             if (!function.hasThisVariableBeenDeclared(token) && !getNextToken().getContents().equals("(")) {
-                System.out.println("ERROR: This variable: " + token.getContents() + " has no declaration in the function: " + function.getName());
+              System.out.println("ERROR: This variable: " + token.getContents() + " has no declaration in the function: " + function.getName());
                 return false;
             }
             Accept();
@@ -415,12 +415,12 @@ class SemanticAnalyzer {
                 try {
                     if (!newtoken.getDeclaredType().equals(otherFunction.getParamVarByIndex(otherFunction.getVariablesInParams().size() - 1).getDeclaredType())
                             && !otherFunction.getParamVarByIndex(0).getContents().equals("void")) {
-                        System.out.println("Param types do not match in the functionnn: " + function.getName());
+                      System.out.println("Param types do not match in the functionnn: " + function.getName());
                         System.out.println("REJECT");
                         System.exit(0);
                     } else if (!areBothTokensArraysOrNotArrays(newtoken, otherFunction.getParamVarByIndex(otherFunction.getVariablesInParams().size() - 1))) {
-                        System.out.println("One item is an array and the other is not: " + newtoken.getContents() + " " +
-                                otherFunction.getParamVarByIndex(otherFunction.getVariablesInParams().size() - 1).getContents());
+//                        System.out.println("One item is an array and the other is not: " + newtoken.getContents() + " " +
+//                                otherFunction.getParamVarByIndex(otherFunction.getVariablesInParams().size() - 1).getContents());
                         System.out.println("REJECT");
                         System.exit(0);
                     }
@@ -466,11 +466,11 @@ class SemanticAnalyzer {
                 if (getNextToken().getContents().equals("(")) {
                     Function newMethodCall = new Function(token.getContents());
                     if (!functionList.SearchLinearProbe(newMethodCall)) {
-                        System.out.println("Method does not exist: " + newMethodCall.getName());
+                      System.out.println("Method does not exist: " + newMethodCall.getName());
                         return false;
                     }
                 } else {
-                    System.out.println("ERROR: This vwewewariablllllllle: " + token.getContents() + " has no declaration in the function: " + function.getName());
+                  System.out.println("ERROR: This vwewewariablllllllle: " + token.getContents() + " has no declaration in the function: " + function.getName());
                     return false;
                 }
             } else {
@@ -480,13 +480,13 @@ class SemanticAnalyzer {
                 Function f = functionList.SearchByFunction(methodCall.getMethodName());
                 try {
                     if (!tok.getDeclaredType().equals(f.getParamVarByIndex(paramIndex).getDeclaredType())) {
-                        System.out.println("types do not match!!!!!!: " + tok.getContents() + " " + f.getParamVarByIndex(paramIndex).getContents());
+                     //   System.out.println("types do not match!!!!!!: " + tok.getContents() + " " + f.getParamVarByIndex(paramIndex).getContents());
                         System.out.println("REJECT");
                         System.exit(0);
                         //IF TYPES ARE OKAY, CHECK IF ONE IS AN ARRAY WHILE THE OTHER IS NOT
                     } else if (!areBothTokensArraysOrNotArrays(tok, f.getParamVarByIndex((paramIndex)))) {
-                        System.out.println("One item is an array and the other is not: " + tok.getContents() + " " +
-                                f.getParamVarByIndex((paramIndex)).getContents());
+//                        System.out.println("One item is an array and the other is not: " + tok.getContents() + " " +
+//                                f.getParamVarByIndex((paramIndex)).getContents());
                         System.out.println("REJECT");
                         System.exit(0);
                     }
@@ -562,7 +562,8 @@ class SemanticAnalyzer {
             if (getNextToken().getContents().equals("(")) {
                 Function funct = new Function(token.getContents());
                 if (!functionList.SearchLinearProbe(funct)) {
-                    System.out.println("The function call in the return stmt is not valid: " + funct.getName() + "()");
+                   System.out.println("The function call in the return stmt is not valid: " + funct.getName() + "()");
+                    return false;
                 }
             }
             Accept();
@@ -802,7 +803,7 @@ class SemanticAnalyzer {
         if (getNextToken().getType().equals("ID") && getNext2Token().getContents().equals("(")) { //IF RHS IS FUNCTION
             Function f1 = new Function(getNextToken().getContents());
             if (!functionList.SearchLinearProbe(f1)) {
-                System.out.println("Function not found: " + f1.getName());
+              System.out.println("Function not found: " + f1.getName());
                 System.out.println("REJECT");
                 System.exit(0);
             }
@@ -836,7 +837,7 @@ class SemanticAnalyzer {
                 Tokens Right = RHS;
                 RHS = function.getDeclaredDataOfToken(RHS);
                 if (RHS == null) {
-                    System.out.println("variable does not exist: " + Right.getContents());
+                  System.out.println("variable does not exist: " + Right.getContents());
                     System.out.println("REJECT");
                     System.exit(0);
                 }
@@ -847,9 +848,9 @@ class SemanticAnalyzer {
         //----------------------COMPARE LEFT AND RIGHT -----------------------------------------------
         try {
             if (!LHS.getDeclaredType().equals(RHS.getDeclaredType()) && !doesRightHaveRelop) {
-                System.out.println("MISMATCH OF TYPES: " + " lhs: " + LHS.getDeclaredType() + " rhs: " + RHS.getDeclaredType());
+              System.out.println("MISMATCH OF TYPES: " + " lhs: " + LHS.getDeclaredType() + " rhs: " + RHS.getDeclaredType());
                 //System.out.println("L: " + LHS.getContents());
-               // System.out.println(token.getContents());
+               System.out.println(token.getContents());
                 //System.out.println("R: " + RHS.getContents());
                 System.out.println("REJECT");
                 System.exit(0);
@@ -859,7 +860,7 @@ class SemanticAnalyzer {
         }
 // -----FOR RELOPS IN THE RHS------------------------------------------------------------------------------------------------
         if (LHS.getDeclaredType().equals("float") && doesRightHaveRelop){
-            System.out.println("relops return an int not float");
+          System.out.println("relops return an int not float");
             System.out.println("REJECT");
             System.exit(0);
         }
@@ -944,7 +945,7 @@ class SemanticAnalyzer {
 
             Tokens tstToken = new Tokens(LHS.getContents());
 
-            //LHS is variable that appears before ',' and also before ')' so that during comparison, we dont compare special char's
+            //LHS is variable that appears before ',' and also before ')' and ']' so that during comparison, we dont compare special char's
 
             LHS = function.getDeclaredDataOfToken(LHS);
 
@@ -1070,7 +1071,7 @@ class SemanticAnalyzer {
                     Function funct = new Function(IDholder.getContents());
                     function = funct;
                     if (!functionList.SearchLinearProbe(funct)) {
-                        System.out.println("Method call before declaration: " + function.getName());
+                     System.out.println("Method call before declaration: " + function.getName());
                         return false;
                     }
 
@@ -1087,7 +1088,7 @@ class SemanticAnalyzer {
         } else {
             function = (Function) stack.peek();                                                       //WHERE VARIABLES ARE SEARCHED FOR
             if (!function.hasThisVariableBeenDeclared(anotherIDholder)) {
-                System.out.println("ERROR: This variable: " + anotherIDholder.getContents() + " has nooooooooooooo declaration in the function: " + function.getName());
+              System.out.println("ERROR: This variable: " + anotherIDholder.getContents() + " has nooooooooooooo declaration in the function: " + function.getName());
                 return false;
             }
 
@@ -1125,7 +1126,7 @@ class SemanticAnalyzer {
         Function otherFunction = functionList.SearchByFunction(methodCall.getMethodName());
         try {
             if (!newtoken.getDeclaredType().equals(otherFunction.getParamVarByIndex(otherFunction.getVariablesInParams().size() - 1).getDeclaredType())) {
-                System.out.println("Param types do not match in the functionnn: " + function.getName());
+              System.out.println("Param types do not match in the functionnn: " + function.getName());
                 System.out.println("REJECT");
                 System.exit(0);
             } else if (!areBothTokensArraysOrNotArrays(newtoken, otherFunction.getParamVarByIndex(otherFunction.getVariablesInParams().size() - 1))) {
@@ -1168,7 +1169,7 @@ class SemanticAnalyzer {
             function = (Function) stack.peek();
             Tokens prev = function.getDeclaredDataOfToken(previousToken());
             if (!function.isThisAnArray(prev)) {
-                System.out.println("ERROR: Indexing operator [] cannot be used on the variable: " + prev.getContents() + prev.getDeclaredType());
+              System.out.println("ERROR: Indexing operator [] cannot be used on the variable: " + prev.getContents() + prev.getDeclaredType());
                 return false;
             }
             Accept();
@@ -1204,7 +1205,7 @@ class SemanticAnalyzer {
             if (token.getContents().equals("=")) {
                 checkLHSandRHS();
                 if (typeHolder.getArray() && !getNextToken().getContents().equals("[") && typeHolder != null) {
-                    System.out.println("cannot assign value to type array, must be assigned to an index: " + typeHolder.getContents());
+                  System.out.println("cannot assign value to type array, must be assigned to an index: " + typeHolder.getContents());
                     System.out.println("REJECT");
                     System.exit(0);
                 }
@@ -1316,11 +1317,11 @@ class SemanticAnalyzer {
             function = (Function) stack.peek();
             //IF INT AND VOID MUST RETURN A VALUE
             if (getNextToken().getContents().equals(";") && !function.getTYPE().equals("void")) {
-                System.out.println("int or float must return value: " + function.getName());
+              System.out.println("int or float must return value: " + function.getName());
                 return false;
             }
             if (function.getTYPE().equals("void") && !getNextToken().getContents().equals(";")) {
-                System.out.println("ERROR: Void functions cannot return a value");
+              System.out.println("ERROR: Void functions cannot return a value");
                 return false;
             }
             if (token.getDepth() >= 0) {
@@ -1351,7 +1352,7 @@ class SemanticAnalyzer {
         if (getNextToken().getType().equals("ID") && getNext2Token().getContents().equals("(")) { //IF RHS IS FUNCTION
             Function f1 = new Function(getNextToken().getContents());
             if (!functionList.SearchLinearProbe(f1)) {
-                System.out.println("Function not found: " + f1.getName());
+             //   System.out.println("Function not found: " + f1.getName());
                 System.out.println("REJECT");
                 System.exit(0);
             }
@@ -1391,7 +1392,7 @@ class SemanticAnalyzer {
                 Tokens Right = RHS;
                 RHS = function.getDeclaredDataOfToken(RHS);
                 if (RHS == null) {
-                    System.out.println("variable does not exist: " + Right.getContents());
+                 //   System.out.println("variable does not exist: " + Right.getContents());
                     System.out.println("REJECT");
                     System.exit(0);
                 }
@@ -1534,9 +1535,11 @@ class SemanticAnalyzer {
                 } catch (Exception e) {
                     //pass
                 }
+                function.containsThisDeclarationAlready(previousToken());
                 function.addToParamList(previousToken());
             } else {
                 previousToken().setArray(false);
+                function.containsThisDeclarationAlready(previousToken());
                 previousToken().setDeclaredType(prev2Token().getContents());
                 function.addToParamList(previousToken());
             }
@@ -1582,7 +1585,7 @@ class SemanticAnalyzer {
                 if (!prev2Token().getContents().equals("void")) {
                     previousToken().setDeclaredType(prev2Token().getContents());
                 } else {
-                    System.out.println("ERROR: Variable cannot be declared as type VOID");
+                  System.out.println("ERROR: Variable cannot be declared as type VOID");
                     return false;
                 }
                 globalVariables.add(previousToken());    // CREATE GLOBAL VARIABLES
@@ -1592,7 +1595,7 @@ class SemanticAnalyzer {
                 if (!prev2Token().getContents().equals("void")) {
                     previousToken().setDeclaredType(prev2Token().getContents());
                 } else {
-                    System.out.println("ERROR: Variable " + previousToken().getContents() + " " + "cannot be declared as type VOID");
+                  System.out.println("ERROR: Variable " + previousToken().getContents() + " " + "cannot be declared as type VOID");
                     return false;
                 }
                 previousToken().setDeclaredType(prev2Token().getContents());
@@ -1638,7 +1641,7 @@ class SemanticAnalyzer {
                         prev2Token().setArraySize(arrSize);
                     }
                 } catch (Exception e) {       // HANDLES THE EXCEPTION IF ARRAY INDEX IS NOT INTEGER
-                    System.out.println("Number format Exception for input: " + token.getContents());
+                  System.out.println("Number format Exception for input: " + token.getContents());
                     return false;
                 }
                 Accept();
