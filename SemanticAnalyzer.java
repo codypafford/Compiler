@@ -1,3 +1,4 @@
+import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 
 import java.util.ArrayList;
@@ -30,6 +31,10 @@ class SemanticAnalyzer {
     Tokens declaredToken;  //used to keep tracl of variable on left side of '='
     private boolean inDeclaredMode;
     private Boolean inIfMode;
+    private boolean elseHasNoBrackets;
+    private boolean inElseMode;
+    private boolean inArrayMode;
+    private Tokens declaredArray;
 
 
     SemanticAnalyzer() {
@@ -104,6 +109,20 @@ class SemanticAnalyzer {
             return false;
         }
         if (isID(token)) {
+            if (!getNextToken().getContents().equals("[") && !getNextToken().getContents().equals("(")){  // IF DELCARATION IS NOT AN ARRAY
+                instructions = new Instructions();
+                instructions.setOperation("ALLOC");
+                instructions.setOperand1("4");
+                instructions.setResult(token.getContents());
+                Main.InstructionList.add(instructions);
+            }else if (getNextToken().getContents().equals("[")){  // IF DECLARATION IS AN ARRAY
+                instructions = new Instructions();
+                instructions.setOperation("ALLOC");
+                int num = 4 * Integer.parseInt(getNext2Token().getContents());
+                instructions.setOperand1(String.valueOf(num));
+                instructions.setResult(token.getContents());
+                Main.InstructionList.add(instructions);
+            }
             Accept();
         } else return false;
 
@@ -139,30 +158,31 @@ class SemanticAnalyzer {
             if (token.getContents().equals(")")) {
                 instructions.setResult(String.valueOf(function.getVariablesInParams().size()));
                 Main.InstructionList.add(instructions);
+                if (function.getVariablesInParams().size() > 0) {
+                    for (int i = 0; i < function.getVariablesInParams().size(); i++) {
+                        Tokens atIndex = function.getParamVarByIndex(i);
+                        instructions = new Instructions();  // FOR PARAMS
+                        instructions.setOperation("PARAM");
+                        instructions.setResult(atIndex.getContents());
+                        Main.InstructionList.add(instructions);
+                        instructions = new Instructions(); // FOR ALLOCATIONS
+                        instructions.setOperation("ALLOC");
+                        if (atIndex.getArray()) {
+                            instructions.setOperand1(String.valueOf(4 * atIndex.getArraySize()));
+                        } else {
+                            instructions.setOperand1("4");
+                        }
+                        instructions.setResult(atIndex.getContents());
+                        Main.InstructionList.add(instructions);
+
+
+                    }
+                }
                 Accept();
                 if (!parse_compoundStmt()) {
                     return false;
                 } else {
-                    if (function.getVariablesInParams().size() > 0) {
-                        for (int i = 0; i < function.getVariablesInParams().size(); i++) {
-                            Tokens atIndex = function.getParamVarByIndex(i);
-                            instructions = new Instructions();  // FOR PARAMS
-                            instructions.setOperation("PARAM");
-                            instructions.setResult(atIndex.getContents());
-                            Main.InstructionList.add(instructions);
-                            instructions = new Instructions(); // FOR ALLOCATIONS
-                            instructions.setOperation("ALLOC");
-                            if (atIndex.getArray()) {
-                                instructions.setOperand1(String.valueOf(4 * atIndex.getArraySize()));
-                            } else {
-                                instructions.setOperand1("4");
-                            }
-                            instructions.setResult(atIndex.getContents());
-                            Main.InstructionList.add(instructions);
 
-
-                        }
-                    }
                     return true;
                 }
             }
@@ -183,7 +203,16 @@ class SemanticAnalyzer {
             if (!parse_statementList()) {
                 return false;
             }
-            if (token.getContents().equals("}")) {
+            if (token.getContents().equals("}")) {  // BR BRANCH FOR ELSE STATEMENTS
+
+                if (token.getDepth() == 1){  // END OF FUNCTION INSTRUCTION
+                    function = (Function) stack.peek();
+                    instructions = new Instructions();
+                    instructions.setOperation("END");
+                    instructions.setOperand1("FUNCT");
+                    instructions.setOperand2(function.getName());
+                    Main.InstructionList.add(instructions);
+                }
                 if (token.getDepth() <= 2) {
                     tempVarList.clear();
                 }
@@ -192,16 +221,35 @@ class SemanticAnalyzer {
                     System.out.println("Missing return statement on function: " + function.getName());
                     return false;
                 }
+
                 //ITERATE THROUGH ARRAY BACKWARDS TO 'FIX' BACKPATCH
-                if (inIfMode){
-                    for(int i = Main.InstructionList.size() - 1; i >= 0; i--){
+                try {
+                    if (inIfMode) {
+                        for (int i = Main.InstructionList.size() - 1; i >= 0; i--) {
+                            //IF LAST INS IS 'BR' THEN: NUM = NUM + 2
+                            Instructions ins = Main.InstructionList.get(i);
+                            if (ins.getResult().equals("BACKPATCH")) {
+                                //  System.out.println("--------" + Main.InstructionList.get(Main.InstructionList.size()-1));
+
+                                int num = Integer.parseInt(instructions.getNumber());
+                                num = num + 1;
+                                ins.setResult(String.valueOf(num));
+                            }
+                            inIfMode = false;
+                        }
+                    }
+                }catch (Exception e){
+                    //pass
+                }
+                if (inElseMode && !elseHasNoBrackets) {
+                    for (int i = Main.InstructionList.size() - 1; i >= 0; i--) {
                         Instructions ins = Main.InstructionList.get(i);
-                        if (ins.getResult().equals("BACKPATCH")){
+                        if (ins.getResult().equals("BACKPATCH")) {
                             int num = Integer.parseInt(instructions.getNumber());
                             num = num + 1;
                             ins.setResult(String.valueOf(num));
                         }
-                        inIfMode = false;
+                        inElseMode = false;
                     }
                 }
                 Accept();
@@ -514,7 +562,9 @@ class SemanticAnalyzer {
         if (isID(token) || token.getContents().equals("(") || isNUM(token)) {
             if (!parse_argList()) {
                 return false;
-            } else return true;
+            } else {
+                return true;
+            }
         } else if (token.getContents().equals(")")) {
             paramIndex = 0;
             return true;
@@ -522,6 +572,13 @@ class SemanticAnalyzer {
     }
 
     private boolean parse_argList() {
+        if (isID(token) || isNUM(token)){
+            instructions = new Instructions();
+            instructions.setOperation("ARG");
+            instructions.setOperand1("4");
+            instructions.setResult(token.getContents());
+            Main.InstructionList.add(instructions);
+        }
         if (isID(token)) {
             function = (Function) stack.peek();
             if (!function.hasThisVariableBeenDeclared(token)) {
@@ -958,21 +1015,18 @@ class SemanticAnalyzer {
             //pass
         }
 // -----FOR RELOPS IN THE RHS------------------------------------------------------------------------------------------------
-        if (LHS.getDeclaredType().equals("float") && doesRightHaveRelop) {
-            System.out.println("relops return an int not float");
-            System.out.println("REJECT");
-            System.exit(0);
-        }
+//        if (LHS.getDeclaredType().equals("float") && doesRightHaveRelop) {
+//            System.out.println("relops return an int not float");
+//            System.out.println("REJECT");
+//            System.exit(0);
+//        }
 
         //----------------------------------------------------------------------------------------------------------------
         //------------CODE GEN---------------------------------------------------------------------------------------------------------------
-        for (Instructions ins : Main.InstructionList) {
-            // System.out.println(ins);
-        }
 
 //ONLY IF BOTH LEFT AND RIGHT ARE BOTH INTS OR FLOATS
         try {
-            if (LHS.getNum() && RHS.getNum() && !token.getContents().equals("=") && !isThereARelop()) {
+            if (LHS.getNum() && RHS.getNum() && !token.getContents().equals("=") && !isThereARelop() && !inArrayMode) {
                 System.out.println(token);
                 instructions = new Instructions();
                 instructions.setOperation(token.getContents());
@@ -1125,6 +1179,14 @@ class SemanticAnalyzer {
 
     private boolean parse_argListPrime() {
         if (token.getContents().equals(",")) {
+            if (isID(getNextToken()) || isNUM(getNextToken())){
+                instructions = new Instructions();
+                instructions.setOperation("ALLOC");
+                instructions.setOperand1("4");
+                instructions.setResult(getNextToken().getContents());
+                Main.InstructionList.add(instructions);
+            }
+            numOfParamsinCall++;
             numOfParamsinCall++;
             function = (Function) stack.peek();
             Tokens LHS = previousToken();
@@ -1190,6 +1252,16 @@ class SemanticAnalyzer {
             try {
                 if (!methodCall.getMethodName().equals("null")) {
                     methodCall.setNumOfParams(numOfParamsinCall);
+                    instructions = new Instructions();       // INSTRUCTION FOR FUNCTION CALL
+                    instructions.setOperation("CALL");
+                    instructions.setOperand1(methodCall.getMethodName());
+                    instructions.setOperand2(String.valueOf(methodCall.getNumOfParams()));
+                    instructions.setResult(temps[globalIndex]);
+                    globalIndex++;
+                    Main.InstructionList.add(instructions);
+                    methodCall.setMethodName("null");
+                    inTempMode = true;
+
                 }
             } catch (Exception e) {
                 //pass
@@ -1203,7 +1275,7 @@ class SemanticAnalyzer {
             }
             return true;
         }
-        return false;
+        return true;
     }
 
     private boolean parse_termPrime() {
@@ -1243,6 +1315,7 @@ class SemanticAnalyzer {
         if (token.getContents().equals("(")) {
             Tokens IDholder = previousToken();
             methodCall = new MethodCall(IDholder);
+
             Accept();
             if (!parse_args()) {
                 return false;
@@ -1266,7 +1339,6 @@ class SemanticAnalyzer {
                         System.out.println("Method call before declaration: " + function.getName());
                         return false;
                     }
-
 
                 }
             }
@@ -1336,7 +1408,7 @@ class SemanticAnalyzer {
 
     private void isValidMethodCall(MethodCall methodCall) {
         Function call = new Function(methodCall);
-        if (!functionList.SearchLinearProbe(call)) {
+        if (!functionList.SearchLinearProbe(call) && !methodCall.getMethodName().equals("null")) {
             System.out.println("Method call before declarationssss: " + methodCall.getMethodName());
             System.out.println("REJECT");
             System.exit(0);
@@ -1345,11 +1417,15 @@ class SemanticAnalyzer {
 
         Function functionFromFunctList = functionList.SearchByFunction(call.getName());
 //    CHECK THE TYPES WITHIN METHOD CALL.....THE LAST INDEX WILL BE CHECKED IN THE METHOD: checkMethodCallReturnType()
-        if (methodCall.getNumOfParams() != functionFromFunctList.getNumOfVariablesInParams()) {
-            System.out.println("method call num of params: " + methodCall.getNumOfParams());
-            System.out.println("ERROR: Params do not matchhh function: " + methodCall.getMethodName() + " " + functionFromFunctList.getNumOfVariablesInParams());
-            System.out.println("REJECT");
-            System.exit(0);
+        try {
+            if (methodCall.getNumOfParams() != functionFromFunctList.getNumOfVariablesInParams()) {
+                System.out.println("method call num of params: " + methodCall.getNumOfParams());
+                System.out.println("ERROR: Params do not matchhh function: " + methodCall.getMethodName() + " " + functionFromFunctList.getNumOfVariablesInParams());
+                System.out.println("REJECT");
+                System.exit(0);
+            }
+        }catch(Exception e){
+            //pass
         }
         numOfParamsinCall = 1;
         //------------------------------------------------------------------------------------------------------------------------
@@ -1358,8 +1434,11 @@ class SemanticAnalyzer {
 
     private boolean parse_varPrime() {
         if (token.getContents().equals("[")) {
+            declaredArray = previousToken();
+            declaredArray.setN_number(n-1);
             function = (Function) stack.peek();
             Tokens prev = function.getDeclaredDataOfToken(previousToken());
+            inArrayMode = true;
             if (!function.isThisAnArray(prev)) {
                 System.out.println("ERROR: Indexing operator [] cannot be used on the variable: " + prev.getContents() + prev.getDeclaredType());
                 return false;
@@ -1369,6 +1448,7 @@ class SemanticAnalyzer {
                 return false;
             }
             if (token.getContents().equals("]")) {
+                inArrayMode = false;
                 Accept();
                 return true;
             } else return false;
@@ -1426,6 +1506,9 @@ class SemanticAnalyzer {
         } else {
             if (!parse_termPrime()) {
                 return false;
+            }
+            if (!parse_additiveExpressionPrime()){
+                return  false;
             }
             if (!parse_SSS()) {
                 return false;
@@ -1508,7 +1591,47 @@ class SemanticAnalyzer {
     private void createRelopBranch() {
         if (tempRelop.equals(">")) {
             instructions = new Instructions();
-            instructions.setOperation("BRLE");
+            instructions.setOperation("BRLE");  //BRANCH LESS THAN OR EQUAL TO
+            instructions.setOperand1(temps[globalIndex - 1]);
+            instructions.setResult("BACKPATCH");
+            Main.InstructionList.add(instructions);
+
+        }
+        if (tempRelop.equals("==")) {
+            instructions = new Instructions();
+            instructions.setOperation("BRNE");  //BRANCH NOT EQUAL TO
+            instructions.setOperand1(temps[globalIndex - 1]);
+            instructions.setResult("BACKPATCH");
+            Main.InstructionList.add(instructions);
+
+        }
+        if (tempRelop.equals("<=")) {
+            instructions = new Instructions();
+            instructions.setOperation("BRGT");  // BRANCH GREATER THAN
+            instructions.setOperand1(temps[globalIndex - 1]);
+            instructions.setResult("BACKPATCH");
+            Main.InstructionList.add(instructions);
+
+        }
+        if (tempRelop.equals(">=")) {
+            instructions = new Instructions();
+            instructions.setOperation("BRLT");   // BRANCH LESS THAN
+            instructions.setOperand1(temps[globalIndex - 1]);
+            instructions.setResult("BACKPATCH");
+            Main.InstructionList.add(instructions);
+
+        }
+        if (tempRelop.equals("!=")) {
+            instructions = new Instructions();
+            instructions.setOperation("BRET");  // BRANCH EQUAL TO
+            instructions.setOperand1(temps[globalIndex - 1]);
+            instructions.setResult("BACKPATCH");
+            Main.InstructionList.add(instructions);
+
+        }
+        if (tempRelop.equals("<")) {
+            instructions = new Instructions();
+            instructions.setOperation("BRGET");  //BRANCH GREATER THAN OR EQUAL TO
             instructions.setOperand1(temps[globalIndex - 1]);
             instructions.setResult("BACKPATCH");
             Main.InstructionList.add(instructions);
@@ -1522,13 +1645,23 @@ class SemanticAnalyzer {
                 || getNextToken().getContents().equals("if") || getNextToken().getContents().equals("while") || getNextToken().getContents().equals("return"))) {
             //ITERATE BACKWARDS THROUGH LIST TO 'FIX' BACKPATCH
 
-            if (inIfMode && token.getContents().equals("else")){
-                for(int i = Main.InstructionList.size() - 1; i >= 0; i--){
+            if (inIfMode && token.getContents().equals("else")) {
+                for (int i = Main.InstructionList.size() - 1; i >= 0; i--) {
                     Instructions ins = Main.InstructionList.get(i);
-                    if (ins.getResult().equals("BACKPATCH")){
+                    if (ins.getResult().equals("BACKPATCH")) {
                         ins.setResult(instructions.getNumber());
                     }
                     inIfMode = false;
+                }
+            }
+            if (!inIfMode && token.getContents().equals("else")) {
+                instructions = new Instructions();
+                instructions.setOperation("BR");
+                instructions.setResult("BACKPATCH");
+                Main.InstructionList.add(instructions);
+                inElseMode = true;
+                if (!getNextToken().getContents().equals("{")) {
+                    elseHasNoBrackets = true;
                 }
             }
             Accept();
@@ -1640,17 +1773,25 @@ class SemanticAnalyzer {
 
 
     private boolean parse_expressionStmt() {
+
         if (token.getContents().equals(";")) {
+
             if (inDeclaredMode) {
                 instructions = new Instructions();
                 instructions.setOperation("ASSGN");
-                if (inTempMode) {
-                    instructions.setOperand1(temps[globalIndex - 1]);
-                } else {
-                    instructions.setOperand1(previousToken().getContents());
-                }
-                instructions.setResult(declaredToken.getContents());
-                Main.InstructionList.add(instructions);
+                    if (inTempMode) {
+                        instructions.setOperand1(temps[globalIndex - 1]);
+                    } else {
+                        instructions.setOperand1(previousToken().getContents());
+                    }
+                    try {
+                        instructions.setResult(declaredToken.getContents());
+                        Main.InstructionList.add(instructions);
+
+                    }catch (Exception e){
+                        //pass
+                    }
+
             }
             inTempMode = false;
             inDeclaredMode = false;
@@ -1667,7 +1808,21 @@ class SemanticAnalyzer {
             }
             try {
                 if (token.getContents().equals(";")) {
-                    if (inDeclaredMode) {
+                    try {
+                        Tokens t = function.getDeclaredDataOfToken(declaredArray);
+                        instructions = new Instructions();
+                        instructions.setOperation("DISP");
+                        instructions.setOperand1(declaredArray.getContents());
+                        int num = 4 * t.getArraySize();
+                        instructions.setOperand2(String.valueOf(num));
+                        instructions.setResult(temps[globalIndex]);
+                        globalIndex++;
+                        Main.InstructionList.add(instructions);
+                        declaredArray = null;
+                    }catch (Exception e){
+                        //pass
+                    }
+                    if (inDeclaredMode) {  // in declaration mode
                         instructions = new Instructions();
                         instructions.setOperation("ASSGN");
                         if (inTempMode) {
@@ -1675,8 +1830,27 @@ class SemanticAnalyzer {
                         } else {
                             instructions.setOperand1(previousToken().getContents());
                         }
-                        instructions.setResult(declaredToken.getContents());
+
+                        if (declaredToken.getContents().equals("]") && inTempMode){
+                            instructions.setOperand1(temps[globalIndex - 2]);
+                            instructions.setResult(temps[globalIndex-1]);
+                        }else if (declaredToken.getContents().equals("]")){
+                            instructions.setResult(temps[globalIndex-1]);
+                        }else{
+                            instructions.setResult(declaredToken.getContents());
+                        }
                         Main.InstructionList.add(instructions);
+                    }
+                    if (inElseMode && elseHasNoBrackets){
+                        for (int i = Main.InstructionList.size() - 1; i >= 0; i--) {
+                            Instructions ins = Main.InstructionList.get(i);
+                            if (ins.getResult().equals("BACKPATCH")) {
+                                int num = Integer.parseInt(instructions.getNumber());
+                                num = num + 1;
+                                ins.setResult(String.valueOf(num));
+                            }
+                            inElseMode = false;
+                        }
                     }
                     inTempMode = false;
                     inDeclaredMode = false;
@@ -1831,6 +2005,20 @@ class SemanticAnalyzer {
             return false;
         }
         if (isID(token)) {
+            if (!getNextToken().getContents().equals("[") && !getNextToken().getContents().equals("(")){  // IF DELCARATION IS NOT AN ARRAY
+                instructions = new Instructions();
+                instructions.setOperation("ALLOC");
+                instructions.setOperand1("4");
+                instructions.setResult(token.getContents());
+                Main.InstructionList.add(instructions);
+            }else if (getNextToken().getContents().equals("[")){  // IF DECLARATION IS AN ARRAY
+                instructions = new Instructions();
+                instructions.setOperation("ALLOC");
+                int num = 4 * Integer.parseInt(getNext2Token().getContents());
+                instructions.setOperand1(String.valueOf(num));
+                instructions.setResult(token.getContents());
+                Main.InstructionList.add(instructions);
+            }
             Accept();
         } else {
             return false;
